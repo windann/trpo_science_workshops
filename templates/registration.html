@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'index.css' %}">
+
+<div class = 'd-flex justify-content-center'>
+
+    <form method="POST" class="m-3 col-lg-8" enctype="multipart/form-data" role="form">
+
+            {% csrf_token %}
+
+
+            <div class="form-group">
+
+                {% if field.errors %}
+                    <div class = 'alert alert-danger'>
+                        {% for error in field.errors %}
+                        <div class="p-3">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <h3 class="mb-3">Имя пользователя</h3>
+                {{ form.username }}
+
+                <h3 class="mb-3">{{ form.first_name.label }}</h3>
+                {{ form.first_name }}
+
+                <h3 class="mb-3">{{ form.last_name.label }}</h3>
+                {{ form.last_name }}
+
+                <h3 class="mb-3">{{ form.avatar.label }}</h3>
+                {{ form.avatar }}
+
+                <h3 class="mb-3">{{ form.user_type.label }}</h3>
+                {{ form.user_type }}
+
+                <h3 class="mb-3">Пароль</h3>
+                <input class="form-control mb-3" id="{{ form.password1.id_for_label }}" maxlength="30" name="{{ form.password1.html_name }}" type="text" /> 
+
+
+                <h3 class="mb-3">Подтверждение пароля</h3>
+                <input class="form-control mb-3" id="{{ form.password2.id_for_label }}" maxlength="30" name="{{ form.password2.html_name }}" type="text" /> 
+
+            </div>
+
+            <button type="submit" class = 'btn btn-primary col-lg-4'>Зарегистрироваться</button>
+
+    </form>
+
+</div>
+
+{% endblock %}

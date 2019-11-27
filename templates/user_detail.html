@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'index.css' %}">
+
+    <div class = 'container d-flex justify-content-center'>
+
+        <div class = 'col-lg-11 m-5 p-5 border border-info rounded row d-flex justify-content-center'>
+
+            <div class="col-lg-5">
+                <h1> {{ user_p.first_name | capfirst }} {{ user_p.last_name | capfirst }} </h1>
+                <h4>  {{ user_p.user_type }} </h4>
+                <img class="rounded mt-5 mb-5" src="{{ user_p.avatar.url }}" width="152px">
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

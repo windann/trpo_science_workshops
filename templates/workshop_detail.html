@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% if science_workshop.is_over %}
+        <a href="{% url 'archive_url' %}" class="btn btn btn-outline-secondary mt-3 col-lg-4"> К архиву </a>
+    {% else %}
+        <a href="{% url 'science_workshops' %}" class="btn btn btn-outline-secondary mt-3 col-lg-4"> К списку семинаров </a>
+    {% endif %}
+    <p class="text-primary mt-3"> {{science_workshop.theme}} </p>
+    <h1 class="mt-3 mb-3">{{science_workshop.title}}</h1>
+    <p> {{science_workshop.description}} </p>
+    <h3>Лектор:</h3>
+    <p> {{science_workshop.speaker}} </p>
+    <h3>Место проведения:</h3>
+    <p> {{science_workshop.place}} </p>
+    <h3>Дата и время:</h3>
+    <p> {{science_workshop.date_time}} </p>
+    <h3>Организатор</h3>
+    <p> {{science_workshop.organizer}} </p>
+    <h3>Осталось мест</h3>
+    <p>{{ left }}</p>
+    {% if user.is_authenticated %}
+
+        {% if user.user_type.id == 2 %}
+            {% if registrations <= science_workshop.max_listeners %}
+                {% if is_registrated == 0 %}
+                    <a href="{{ science_workshop.registration_on_science_workshop }}" class="btn btn-outline-info mt-3 col-4"> Посетить </a>
+                {% else %}
+                    <p>Ждём вас на семинаре!</p>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            <a href="{{ science_workshop.update }}" class="btn btn-outline-info mb-3 col-3"> Редактировать </a>
+            {% if not science_workshop.is_over %}
+                <a href="{{ science_workshop.archive }}" class="btn btn-outline-info mb-3 col-3"> Добавить в архив </a>
+            {% endif %}
+            <a href="{{ science_workshop.delete }}" class="btn btn-outline-primary mb-3 col-3"> Удалить </a>
+        {% endif %}
+
+            
+    {% else %}
+        <p>Для записи на семинар необходима авторизация!</p>
+    {% endif %}
+    {% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row d-flex justify-content-center">
+        {% for workshop in science_workshops %}
+        <div class="card m-3 p-3 col-3">
+            <div class="card-title">
+                <h5>{{ workshop.title }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    {{ workshop.description | truncatewords:20 }}
+                </p>
+                <a href="{{ workshop.get_absolute_url }}" class="btn btn-outline-info mt-3"> Узнать больше </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}

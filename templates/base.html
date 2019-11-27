@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/journal/bootstrap.min.css" rel="stylesheet" integrity="sha384-ciphE0NCAlD2/N6NUApXAN2dAs/vcSAOTzyE202jJx3oS8n4tAQezRgnlHqcJ59C" crossorigin="anonymous">
+    </head>
+    <body>
+    {% load static %}
+        <header class = 'header p-3 bg-primary navbar-dark'>
+            <div class="container">
+                <div class="d-flex">
+                    {% if list_type == 'new' %}
+                        <a href="{% url 'archive_url' %}" class="btn btn-info mt-1 col-lg-3 col-xs-12"> Архив </a>
+                    {% else %}
+                    <a href="{% url 'science_workshops' %}" class="btn btn-info mt-1 col-lg-3 col-xs-12"> Предстоящие семинары </a>
+                    {% endif %}
+                    <div class="container d-flex justify-content-end align-items-center">
+                        {% if user.is_authenticated %}
+                            {% if user.user_type.id == 1 %}
+                                <a href="{% url 'science_workshop_create_url' %}" class="btn btn-secondary mt-1 mr-3 col-lg-3 col-xs-12"> Создать семинар </a>
+                            {% endif %}
+                            <a href="{% url 'logout' %}" class="btn btn-secondary mt-1 col-lg-2 col-xs-12"> Выход </a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-secondary mt-1 mr-3 col-lg-2 col-xs-12"> Вход </a>
+                            <a href="{% url 'registration_url' %}" class="btn btn-secondary mt-1 col-lg-3 col-xs-12"> Регистрация </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class = 'main'>
+            <div class = 'container'>
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <footer class = 'footer'></footer>
+    </body>
+</html>
