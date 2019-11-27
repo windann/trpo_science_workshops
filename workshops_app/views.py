@@ -9,69 +9,94 @@ from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
+def get_object(model,id):
+    return get_object_or_404(model, id__iexact=id)
 
-class Service(View):
+def filter_objects(model,filters):
+    return model.objects.filter(**filters)
 
-    def science_workshop_delete(request, id):
-        if request.method == 'GET':
-            science_workshop = ScienceWorkshop.objects.get(id__iexact=id)
-            return render(request, 'workshop_delete.html', context={'science_workshop': science_workshop})
-        else:
-            science_workshop = ScienceWorkshop.objects.filter(id=id)
-            science_workshop.delete()
-            return redirect('archive_url')
+def update_object(model, updates):
+    for k, v in updates.items():
+        setattr(model, k, v)
+    model.save()
 
+class ObjectDelete(View):
+    model = None
+    url = None
+    template_object_name = None
+    template = None
 
-    def science_workshop_update(request, id):
-        if request.method == 'GET':
-            science_workshop = get_object_or_404(ScienceWorkshop, id__iexact=id)
-            form = ScienceWorkshopForm(instance=science_workshop)
-            return render(request, 'workshop_update.html', context={'form': form})
-        else:
-            science_workshop = get_object_or_404(ScienceWorkshop, id__iexact=id)
-            form = ScienceWorkshopForm(request.POST, instance=science_workshop)
+    def get(self,request, id):
+        object = filter_objects(self.model, {'id':id})
+        return render(request, self.template, context={self.template_object_name: object})
 
-            if form.is_valid():
-                changed_science_workshop = form.save()
-                return redirect('science_workshop_detail_url', id=changed_science_workshop.id)
+    def post(self,request, id):
+        object = filter_objects(self.model, {'id':id})
+        object.delete()
+        return redirect(self.url)
 
-            return render(request, 'workshop_update.html', context={'form': form})
+class ObjectUpdate(View):
+    model = None
+    url = None
+    template = None
+    model_form = None
 
+    def get(self, request, id):
+        object = get_object(self.model, id)
+        form = self.model_form(instance = object)
+        return render(request, self.template, context={'form': form})
 
-    def science_workshop_get_list(request):
-        science_workshops = ScienceWorkshop.objects.filter(is_over=False)
-        return render(request, 'workshops_list.html', context={'science_workshops': science_workshops, 'list_type': 'new'})
+    def post(self, request, id):
+        object = get_object(self.model, id)
+        form = self.model_form(request.POST, instance=object)
 
+        if form.is_valid():
+            changed_object = form.save()
+            return redirect(url, id=changed_object.id)
 
-    def science_workshop_get_archive_list(request):
-        science_workshops = ScienceWorkshop.objects.filter(is_over=True)
-        return render(request, 'workshops_list.html', context={'science_workshops': science_workshops, 'list_type': 'archive'})
+        return render(request, self.template, context={'form': form})
 
+class ObjectsList(View):
+    list_filters = None
+    model = None
+    template = None 
+    list_type = None
+
+    def get(self, request):
+        objects = filter_objects(self.model, self.list_filters)
+        return render(request, self.template, context={'science_workshops': objects, 'list_type': self.list_type})
+
+class ObjectCreate(View):
+    updates = {'is_over':False,'organizer':None}
+    model_form = None 
+    template = None 
+    url = None 
+
+    def get(self,request):
+        form = self.model_form()
+        return render(request, self.template, context={'form': form})
+
+    def post(self,request):
+        bound_form = self.model_form(request.POST)
+
+        if bound_form.is_valid():
+            new_object = bound_form.save()
+            new_object.save()
+            if self.updates:
+                self.updates['organizer'] = request.user
+                update_object(new_object, self.updates)
+                new_object.save()
+            return redirect(self.url, id=new_object.id)
+
+        return render(request, self.template, context={'form': bound_form})
+
+class ScienceWorkshopService(View):
 
     def science_workshop_archive(request, id):
-        science_workshop = get_object_or_404(ScienceWorkshop, id__iexact=id)
-        science_workshop.is_over = True
+        science_workshop = get_object(ScienceWorkshop, id)
+        update_object(science_workshop, {'is_over':True})
         science_workshop.save()
         return redirect('science_workshops')
-
-
-    def science_workshop_create(request):
-        if request.method == 'GET':
-            form = ScienceWorkshopForm()
-            return render(request, 'workshop_create.html', context={'form': form})
-        else:
-            bound_form = ScienceWorkshopForm(request.POST)
-
-            if bound_form.is_valid():
-                new_science_workshop = bound_form.save()
-                new_science_workshop.save()
-                print(new_science_workshop.kwargs)
-                new_science_workshop.is_over = False
-                new_science_workshop.organizer = request.user
-                new_science_workshop.save()
-                return redirect('science_workshop_detail_url', id=new_science_workshop.id)
-
-            return render(request, 'workshop_create.html', context={'form': bound_form})
 
 
     def science_workshop_get_detail(request, id):
@@ -79,11 +104,11 @@ class Service(View):
         template = 'workshop_detail.html'
 
         if request.method == 'GET':
-            science_workshop = get_object_or_404(model, id__iexact=id)
-            registrations = len(RegistrationOnSeminar.objects.filter(science_workshop=science_workshop))
+            science_workshop = get_object(model, id)
+            registrations = len(filter_objects(RegistrationOnSeminar, {'science_workshop':science_workshop}))
             left = science_workshop.max_listeners - registrations
             if request.user.is_authenticated:
-                is_registrated = len(RegistrationOnSeminar.objects.filter(listener = request.user, science_workshop=science_workshop))
+                is_registrated = len(filter_objects(RegistrationOnSeminar, {'listener':request.user, 'science_workshop':science_workshop}))
             else:
                 is_registrated = 1
             return render(request, template, context={'science_workshop': science_workshop, 
@@ -92,14 +117,11 @@ class Service(View):
                                                             'is_registrated': is_registrated
                                                             })
 
-
     @login_required
     def science_workshop_registration(request, id):
         user = request.user
         science_workshop = get_object_or_404(ScienceWorkshop, id__iexact=id)
-
-        user_registration = RegistrationOnSeminar.objects.filter(listener=user, science_workshop=science_workshop)
-
+        user_registration = filter_objects(RegistrationOnSeminar,{'listener':user, 'science_workshop':science_workshop})
         if user_registration:
             return redirect('science_workshop_detail_url', id=science_workshop.id)
         else:
@@ -108,10 +130,11 @@ class Service(View):
 
             return redirect('science_workshops')
 
+class UserService(View):
 
-    def user_detail(request):
+    def user_detail(request, username):
         if request.method == 'GET':
-            user = get_object_or_404(User, username__iexact=username)
+            user = get_object(User, id)
             return render(request, 'user_detail.html', context={'user_p': user})
 
 
