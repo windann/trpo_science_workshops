@@ -20,7 +20,7 @@ def update_object(model, updates):
         setattr(model, k, v)
     model.save()
 
-class ObjectDelete(View):
+class ObjectDeleteService(View):
     model = None
     url = None
     template_object_name = None
@@ -35,7 +35,7 @@ class ObjectDelete(View):
         object.delete()
         return redirect(self.url)
 
-class ObjectUpdate(View):
+class ObjectUpdateService(View):
     model = None
     url = None
     template = None
@@ -56,7 +56,7 @@ class ObjectUpdate(View):
 
         return render(request, self.template, context={'form': form})
 
-class ObjectsList(View):
+class ObjectsListService(View):
     list_filters = None
     model = None
     template = None 
@@ -66,7 +66,7 @@ class ObjectsList(View):
         objects = filter_objects(self.model, self.list_filters)
         return render(request, self.template, context={'science_workshops': objects, 'list_type': self.list_type})
 
-class ObjectCreate(View):
+class ObjectCreateService(View):
     updates = {'is_over':False,'organizer':None}
     model_form = None 
     template = None 

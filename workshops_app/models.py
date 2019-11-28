@@ -66,3 +66,11 @@ class ScienceWorkshop(models.Model):
 class RegistrationOnSeminar(models.Model):
     listener = models.ForeignKey(User,on_delete=models.SET_NULL, null=True)
     science_workshop = models.ForeignKey(ScienceWorkshop,on_delete=models.SET_NULL, null=True)
+
+# class MaterialType(models.Model):
+#     material_type = models.CharField(max_length=100, verbose_name='Тип', default=None)
+
+# class Material(models.Model):
+#     science_workshop = models.ForeignKey(ScienceWorkshop, on_delete=models.SET_NULL, null=True)
+#     link = models.CharField(max_length=300, verbose_name='Ссылка', default=None)
+#     type = models.ForeignKey(MaterialType,on_delete=models.SET_NULL, null=True)
