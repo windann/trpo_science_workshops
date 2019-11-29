@@ -9,16 +9,26 @@ from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
-def get_object(model,id):
-    return get_object_or_404(model, id__iexact=id)
 
-def filter_objects(model,filters):
-    return model.objects.filter(**filters)
+class DataMapper():
+    def get_object(model_object,id):
+        return get_object_or_404(model_object, id__iexact=id)
 
-def update_object(model, updates):
-    for k, v in updates.items():
-        setattr(model, k, v)
-    model.save()
+    def filter_objects(model_object,filters):
+        return model_object.objects.filter(**filters)
+
+    def update_object(model_object, updates):
+        for k, v in updates.items():
+            setattr(model_object, k, v)
+        return model_object
+
+    def save_object(model_object):
+        model_object.save()
+        return model_object
+
+    def delete_object(model_object):
+        model_object.delete()
+        return model_object
 
 class ObjectDeleteService(View):
     model = None
@@ -27,12 +37,12 @@ class ObjectDeleteService(View):
     template = None
 
     def get(self,request, id):
-        object = filter_objects(self.model, {'id':id})
+        object = DataMapper.filter_objects(self.model, {'id':id})
         return render(request, self.template, context={self.template_object_name: object})
 
     def post(self,request, id):
-        object = filter_objects(self.model, {'id':id})
-        object.delete()
+        object = DataMapper.filter_objects(self.model, {'id':id})
+        DataMapper.delete_object(object)
         return redirect(self.url)
 
 class ObjectUpdateService(View):
@@ -42,17 +52,17 @@ class ObjectUpdateService(View):
     model_form = None
 
     def get(self, request, id):
-        object = get_object(self.model, id)
+        object = DataMapper.get_object(self.model, id)
         form = self.model_form(instance = object)
         return render(request, self.template, context={'form': form})
 
     def post(self, request, id):
-        object = get_object(self.model, id)
+        object = DataMapper.get_object(self.model, id)
         form = self.model_form(request.POST, instance=object)
 
         if form.is_valid():
             changed_object = form.save()
-            return redirect(url, id=changed_object.id)
+            return redirect(self.url, id=changed_object.id)
 
         return render(request, self.template, context={'form': form})
 
@@ -63,7 +73,7 @@ class ObjectsListService(View):
     list_type = None
 
     def get(self, request):
-        objects = filter_objects(self.model, self.list_filters)
+        objects = DataMapper.filter_objects(self.model, self.list_filters)
         return render(request, self.template, context={'science_workshops': objects, 'list_type': self.list_type})
 
 class ObjectCreateService(View):
@@ -81,11 +91,11 @@ class ObjectCreateService(View):
 
         if bound_form.is_valid():
             new_object = bound_form.save()
-            new_object.save()
+            DataMapper.save_object(new_object)
             if self.updates:
                 self.updates['organizer'] = request.user
-                update_object(new_object, self.updates)
-                new_object.save()
+                DataMapper.update_object(new_object, self.updates)
+                DataMapper.save_object(new_object)
             return redirect(self.url, id=new_object.id)
 
         return render(request, self.template, context={'form': bound_form})
@@ -93,9 +103,9 @@ class ObjectCreateService(View):
 class ScienceWorkshopService(View):
 
     def science_workshop_archive(request, id):
-        science_workshop = get_object(ScienceWorkshop, id)
-        update_object(science_workshop, {'is_over':True})
-        science_workshop.save()
+        science_workshop = DataMapper.get_object(ScienceWorkshop, id)
+        DataMapper.update_object(science_workshop, {'is_over':True})
+        DataMapper.save_object(science_workshop)
         return redirect('science_workshops')
 
 
@@ -104,11 +114,11 @@ class ScienceWorkshopService(View):
         template = 'workshop_detail.html'
 
         if request.method == 'GET':
-            science_workshop = get_object(model, id)
-            registrations = len(filter_objects(RegistrationOnSeminar, {'science_workshop':science_workshop}))
+            science_workshop = DataMapper.get_object(model, id)
+            registrations = len(DataMapper.filter_objects(RegistrationOnSeminar, {'science_workshop':science_workshop}))
             left = science_workshop.max_listeners - registrations
             if request.user.is_authenticated:
-                is_registrated = len(filter_objects(RegistrationOnSeminar, {'listener':request.user, 'science_workshop':science_workshop}))
+                is_registrated = len(DataMapper.filter_objects(RegistrationOnSeminar, {'listener':request.user, 'science_workshop':science_workshop}))
             else:
                 is_registrated = 1
             return render(request, template, context={'science_workshop': science_workshop, 
@@ -120,13 +130,13 @@ class ScienceWorkshopService(View):
     @login_required
     def science_workshop_registration(request, id):
         user = request.user
-        science_workshop = get_object_or_404(ScienceWorkshop, id__iexact=id)
-        user_registration = filter_objects(RegistrationOnSeminar,{'listener':user, 'science_workshop':science_workshop})
+        science_workshop = DataMapper.get_object(ScienceWorkshop, id__iexact=id)
+        user_registration = DataMapper.filter_objects(RegistrationOnSeminar,{'listener':user, 'science_workshop':science_workshop})
         if user_registration:
             return redirect('science_workshop_detail_url', id=science_workshop.id)
         else:
             registration = RegistrationOnSeminar(listener=user, science_workshop=science_workshop)
-            registration.save()
+            DataMapper.save_object(registration)
 
             return redirect('science_workshops')
 
@@ -134,7 +144,7 @@ class UserService(View):
 
     def user_detail(request, username):
         if request.method == 'GET':
-            user = get_object(User, id)
+            user = DataMapper.get_object(User, id)
             return render(request, 'user_detail.html', context={'user_p': user})
 
 
@@ -151,12 +161,12 @@ class UserService(View):
 
             if form.is_valid():
                 new_user = form.save()
-                new_user.save()
+                DataMapper.save_object(new_user)
                 new_user = authenticate(username=form.cleaned_data['username'],
                                         password=form.cleaned_data['password1'],
                                         )
                 login(request, new_user)
-                return redirect('user_detail_url', username=new_user.username)
+                return redirect('user_detail_url', id=new_user.id)
 
             context = {'form': form}
 

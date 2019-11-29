@@ -44,8 +44,8 @@ urlpatterns = [
 
     path('', v.ObjectsListService.as_view(list_filters = {'is_over':False},
                                                     model = m.ScienceWorkshop, 
-                                                    template = 'workshops_list.html',list_type = 'new'), 
-                                                    name='science_workshops'),
+                                                    template = 'workshops_list.html',
+                                                    list_type = 'new'), name='science_workshops'),
     path('archive/', v.ObjectsListService.as_view(list_filters = {'is_over':True},
                                             model = m.ScienceWorkshop, 
                                             template = 'workshops_list.html',
